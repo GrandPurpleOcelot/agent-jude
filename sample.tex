@@ -1,0 +1,37 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+
+\title{Sample LaTeX Document}
+\author{Your Name}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+This is a sample LaTeX document to demonstrate how to convert a TeX file into a PDF using Python and the \texttt{pylatex} library.
+
+\section{Section with Math}
+Here is an example of a mathematical equation:
+\begin{equation}
+    \sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}
+\end{equation}
+
+\section{Section with Image}
+You can also include images in your LaTeX document. Here's an example:
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=0.5\textwidth]{example_image.png}
+    \caption{An example image}
+    \label{fig:example-image}
+\end{figure}
+
+Note that the \texttt{example\_image.png} file should be present in the same directory as this \texttt{sample.tex} file.
+
+\section{Conclusion}
+This concludes the sample LaTeX document. You can customize and extend it as needed for your purposes.
+
+\end{document}
