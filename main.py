@@ -2,7 +2,6 @@ import streamlit as st
 from docx import Document
 from io import BytesIO
 import os
-from docx2pdf import convert
 import base64
 import mammoth
 import openai
