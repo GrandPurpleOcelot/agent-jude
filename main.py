@@ -4,6 +4,7 @@ from io import BytesIO
 import os
 from docx2pdf import convert
 import base64
+import mammoth
 
 def load_docx(document):
     doc = Document(document)
@@ -20,9 +21,18 @@ def save_docx(doc):
     doc.save(buffer)
     return buffer
 
-def docx_to_pdf(docx_path, pdf_path):
-    # Convert DOCX to PDF using docx2pdf
-    convert(docx_path, pdf_path)
+def docx_to_html(docx_path, html_path):
+    try:
+        with open(docx_path, "rb") as docx_file:
+            result = mammoth.convert_to_html(docx_file)
+            html = result.value
+
+        with open(html_path, "w", encoding="utf-8") as html_file:
+            html_file.write(html)
+        return True
+    except Exception as e:
+        print(f"Failed to convert DOCX to HTML: {e}")
+        return False
 
 def main():
     st.title('DOCX Editor App')
@@ -47,27 +57,25 @@ def main():
             with open(temp_docx_path, 'wb') as f:
                 f.write(buffer.getvalue())
             
-            # Create a PDF path in the temp directory
-            pdf_path = os.path.join(temp_dir, 'temporary_copy.pdf')
+            # Create a HTML path in the temp directory
+            html_path = os.path.join(temp_dir, 'temporary_copy.html')
             
-            # Convert DOCX to PDF
-            print("++++++++++++++++++", temp_docx_path, pdf_path)
-            convert(temp_docx_path)
-            
-            # Display the PDF
-            with open(pdf_path, "rb") as pdf_file:
-                pdf_bytes = pdf_file.read()
-                st.download_button(
-                    label="Download modified DOCX",
-                    data=buffer,
-                    file_name="modified_document.docx",
-                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                )
-                st.write("Modified Document Preview:")
-                st.components.v1.html(
-                    f'<iframe src="data:application/pdf;base64,{base64.b64encode(pdf_bytes).decode()}" width="700" height="1000" type="application/pdf"></iframe>',
-                    height=1000
-                )
+            # Convert DOCX to HTML
+            if docx_to_html(temp_docx_path, html_path):
+                # Display the HTML if conversion was successful
+                with open(html_path, "r", encoding="utf-8") as html_file:
+                    html_content = html_file.read()
+                    st.write("Modified Document Preview:")
+                    st.html(html_content)
+                    st.download_button(
+                        label="Download modified DOCX",
+                        data=buffer,
+                        file_name="modified_document.docx",
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        type="primary"
+                    )
+            else:
+                st.error("Failed to convert the document to HTML.")
 
 if __name__ == "__main__":
     main()
