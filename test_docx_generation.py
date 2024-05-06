@@ -1,8 +1,27 @@
 from docx import Document
 from docx.shared import Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
+import datetime
 
 document = Document()
+
+document.add_picture('FPT_Software_Logo.png')
+document.add_heading('PRODUCT REQUIREMENTS', 0)
+# Add a 2x2 table with version and date
+table = document.add_table(rows=2, cols=2)
+table.style = 'Table Grid'
+
+# Add headers
+headers = ['Version', 'Date']
+for i, header in enumerate(headers):
+    table.cell(0, i).text = header
+
+# Add data
+version = '1.0'
+date = datetime.date.today().strftime('%Y-%m-%d')
+table.cell(1, 0).text = version
+table.cell(1, 1).text = date
+document.add_page_break()
 
 document.add_heading('Example Document Title', 0)
 

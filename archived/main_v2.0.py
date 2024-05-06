@@ -8,8 +8,6 @@ import openai
 import json
 from docx.shared import Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-import copy
-from copy import deepcopy
 
 # Connect to OpenAI key
 openai.api_key = st.secrets["OPENAI_API_KEY"]
@@ -18,12 +16,6 @@ openai.api_key = st.secrets["OPENAI_API_KEY"]
 def load_docx(document):
     doc = Document(document)
     return doc
-
-def copy_document(doc):
-    new_doc = Document()
-    for element in doc.element.body:
-        new_doc.element.body.append(copy.deepcopy(element))
-    return new_doc
 
 # Function to generate content using OpenAI and replace targeted text
 def generate_content(doc, nl_instruction):
@@ -39,15 +31,11 @@ def generate_content(doc, nl_instruction):
         stream=False,
     )
     generated_text = openai_response.choices[0].message.content
-
-    # Create a copy of the document to avoid modifying the original
-    modified_doc = deepcopy(doc)
-
-    for paragraph in modified_doc.paragraphs:
-        if '[targeted_text]' in paragraph.text:
-            paragraph.text = generated_text
-
-    return modified_doc
+    
+    for para in doc.paragraphs:
+        if '[targeted_text]' in para.text:
+            para.text = generated_text
+    return doc
 
 def generate_table(doc, nl_instruction):
     instruction_message = "Generate a table with sections: User Story, Pre-condition, Description with User Workflow, Post-condition, Acceptance Criteria, and Edge Case."
@@ -83,15 +71,13 @@ def generate_table(doc, nl_instruction):
         results = {}
         descriptions = []
 
-    # Create a new document
-    new_doc = Document()
-
-    # Iterate over the original document
+    # Find the paragraph containing the placeholder and create a table there
     for para in doc.paragraphs:
-        # If the paragraph is the placeholder, add the table
         if '[targeted_table]' in para.text:
-            # Create a table
-            table = new_doc.add_table(rows=1, cols=2)
+            # Clear the placeholder text
+            para.text = ""
+            # Create a table directly after the paragraph
+            table = doc.add_table(rows=1, cols=2)
             table.style = 'Table Grid'
             hdr_cells = table.rows[0].cells
             hdr_cells[0].text = "Section Name"
@@ -110,11 +96,8 @@ def generate_table(doc, nl_instruction):
                 row_cells = table.add_row().cells
                 row_cells[0].text = item['section']
                 row_cells[1].text = item['description']
-        else:
-            # If the paragraph is not the placeholder, just copy it
-            new_doc.add_paragraph(para.text)
 
-    return new_doc
+    return doc
 
 # Function to save a DOCX file to a buffer
 def save_docx(doc):
@@ -139,12 +122,6 @@ def docx_to_html(docx_path, html_path):
 def main():
     st.title('Agent Jude - Requirements Analyst')
 
-    # Initialize session state for documents
-    if 'product_doc' not in st.session_state:
-        st.session_state.product_doc = None
-    if 'modified_doc' not in st.session_state:
-        st.session_state.modified_doc = None
-
     temp_dir = "./temp"
     os.makedirs(temp_dir, exist_ok=True)
 
@@ -153,72 +130,13 @@ def main():
         document = load_docx(uploaded_file)
 
         nl_instruction = st.text_area("Step 2. Describe your product requirements:", placeholder="Create a simple requirements for a login page of a web application...")
-
-        modified_doc = None  # Initialize modified_doc here to prevent UnboundLocalError
+        
+        modified_doc = None  # Initialize modified_doc as None
 
         if st.button("Generate product documentation", help="Generate doc at [target_text]", type="primary"):
-            st.session_state.product_doc = generate_content(document, nl_instruction)
-
-            # Display the preview of the modified document (product documentation)
-            buffer = save_docx(st.session_state.product_doc)
-            buffer.seek(0)
-
-            temp_docx_path = os.path.join(temp_dir, 'modified_document.docx')
-            with open(temp_docx_path, 'wb') as f:
-                f.write(buffer.getvalue())
-
-            html_path = os.path.join(temp_dir, 'temporary_copy.html')
-
-            if docx_to_html(temp_docx_path, html_path):
-                with open(html_path, "r", encoding="utf-8") as html_file:
-                    html_content = html_file.read()
-                    st.subheader("✅ Modified Document Preview (Product Documentation):", divider="green")
-                    st.markdown("""---""")
-                    st.markdown(html_content, unsafe_allow_html=True)
-                    st.download_button(
-                        label="Download modified DOCX (Product Documentation)",
-                        data=buffer,
-                        file_name="modified_document_product_doc.docx",
-                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                        type="primary"
-                    )
-
-        if st.button("Generate user story table", help="Generate a table at the [target_table]", type="primary"):
-            temp_docx_path = os.path.join(temp_dir, 'modified_document.docx')
-            if temp_docx_path:  # Check if product_doc has been created
-                table_doc = deepcopy(st.session_state.product_doc)
-                st.session_state.modified_doc = generate_table(table_doc, nl_instruction)
-
-                # Save the modified document to a buffer for download
-                buffer = save_docx(st.session_state.modified_doc)
-                buffer.seek(0)
-                
-                # Save the modified DOCX to a file in the temporary directory
-                temp_docx_path = os.path.join(temp_dir, 'modified_document_with_table.docx')
-                with open(temp_docx_path, 'wb') as f:
-                    f.write(buffer.getvalue())
-                
-                # Create an HTML path in the temporary directory for preview
-                html_path = os.path.join(temp_dir, 'temporary_copy_with_table.html')
-                
-                # Convert the DOCX to HTML for preview
-                if docx_to_html(temp_docx_path, html_path):
-                    with open(html_path, "r", encoding="utf-8") as html_file:
-                        html_content = html_file.read()
-                        st.subheader("✅ Modified Document Preview (User Story Table):", divider="green")
-                        st.markdown("""---""")
-                        st.markdown(html_content, unsafe_allow_html=True)
-                        st.download_button(
-                            label="Download modified DOCX (User Story Table)",
-                            data=buffer,
-                            file_name="modified_document_with_table.docx",
-                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                            type="primary"
-                        )
-                else:
-                    st.error("Failed to convert the document to HTML.")
-            else:
-                st.error("Please generate the product documentation first.")
+            modified_doc = generate_content(document, nl_instruction)
+        elif st.button("Generate user story table", help="Generate a table at the [target_table]", type="primary"):
+            modified_doc = generate_table(document, nl_instruction)
 
         # Save the uploaded DOCX to a temporary file
         temp_uploaded_docx_path = os.path.join(temp_dir, 'uploaded_document.docx')
@@ -235,6 +153,10 @@ def main():
                 st.markdown(html_content, unsafe_allow_html=True)
         else:
             st.error("Failed to convert the uploaded document to HTML.")
+
+        if modified_doc is not None:  # Check if modified_doc has been assigned
+            buffer = save_docx(modified_doc)
+            buffer.seek(0)
             
             # Save the modified DOCX to a file in the temp directory
             temp_docx_path = os.path.join(temp_dir, 'modified_document.docx')
@@ -245,16 +167,17 @@ def main():
             html_path = os.path.join(temp_dir, 'temporary_copy.html')
             
             # Convert DOCX to HTML
-            if docx_to_html(temp_docx_path, html_path) and st.session_state.product_doc is not None:
+            if docx_to_html(temp_docx_path, html_path):
+                # Display the HTML if conversion was successful
                 with open(html_path, "r", encoding="utf-8") as html_file:
                     html_content = html_file.read()
-                    st.subheader("✅ Modified Document Preview (User Story Table):", divider="green")
+                    st.subheader("✅ Modified Document Preview:", divider="green")
                     st.markdown("""---""")
                     st.markdown(html_content, unsafe_allow_html=True)
                     st.download_button(
-                        label="Download modified DOCX (User Story Table)",
+                        label="Download modified DOCX",
                         data=buffer,
-                        file_name="modified_document_with_table.docx",
+                        file_name="modified_document.docx",
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                         type="primary"
                     )
