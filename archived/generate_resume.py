@@ -6,6 +6,14 @@ import os
 
 def compile_tex_to_pdf(tex_filename):
     # Check if the .tex file exists
+    """Compiles a LaTeX (.tex) file to PDF using pdflatex.
+    
+    Args:
+        tex_filename (str): The name of the LaTeX file to be compiled.
+    
+    Returns:
+        None: This function doesn't return anything, but prints status messages.
+    """
     if not os.path.exists(tex_filename):
         print(f"Error: The file {tex_filename} does not exist.")
         return
