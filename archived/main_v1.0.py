@@ -12,6 +12,23 @@ openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 # Function to load a DOCX file
 def load_docx(document):
+    """Loads a Microsoft Word document.
+    
+    Args:
+        document (str or file-like object): The path to the Word document file or a file-like object containing the document.
+    
+    """Generates content for a document based on natural language instructions using OpenAI's GPT-4 model.
+    
+    Args:
+        doc (Document): The document object to be modified.
+        nl_instruction (str): Natural language instruction for content generation.
+    
+    Returns:
+        Document: The modified document with generated content inserted.
+    """
+    Returns:
+        Document: A python-docx Document object representing the loaded Word document.
+    """
     doc = Document(document)
     return doc
 
@@ -37,15 +54,46 @@ def generate_content(doc, nl_instruction):
 
 # Function to save a DOCX file to a buffer
 def save_docx(doc):
+    """Saves a docx document to a BytesIO buffer.
+    
+    Args:
+        doc (Document): The docx document object to be saved.
+    
+    Returns:
+        BytesIO: A buffer containing the saved document data.
+    """
     buffer = BytesIO()
     doc.save(buffer)
     return buffer
 
 # Function to convert DOCX to HTML
 def docx_to_html(docx_path, html_path):
+    """
+    Converts a DOCX file to HTML format.
+    
+    Args:
+        docx_path (str): The file path of the input DOCX file.
+        html_path (str): The file path where the output HTML will be saved.
+    
+    Returns:
+        bool: True if the conversion was successful, False otherwise.
+    """
     try:
         with open(docx_path, "rb") as docx_file:
             result = mammoth.convert_to_html(docx_file)
+            """
+            Main function for the DOCX Editor App.
+            
+            This function sets up the Streamlit interface for a DOCX editing application. It allows users to upload a .docx file, 
+            provide natural language instructions for content generation, and then generates and displays the modified document.
+            
+            Args:
+                None
+            
+            Returns:
+                None: This function doesn't return anything, but it updates the Streamlit UI.
+            
+            """
             html = result.value
 
         with open(html_path, "w", encoding="utf-8") as html_file:
