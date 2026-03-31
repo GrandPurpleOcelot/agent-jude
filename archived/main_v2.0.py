@@ -14,11 +14,28 @@ openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 # Function to load a DOCX file
 def load_docx(document):
+    """Loads a Microsoft Word document.
+    
+    Args:
+        document (str or file-like object): The path to the Word document or a file-like object containing the document.
+    
+    Returns:
+        Document: A python-docx Document object representing the loaded Word document.
+    """
     doc = Document(document)
     return doc
 
 # Function to generate content using OpenAI and replace targeted text
 def generate_content(doc, nl_instruction):
+    """Generates content for a document based on natural language instructions using OpenAI's GPT model.
+    
+    Args:
+        doc (Document): The document object to be modified.
+        nl_instruction (str): Natural language instruction for content generation.
+    
+    Returns:
+        Document: The modified document with generated content inserted.
+    """
     instruction_message = f"You are a professional business analyst. Your task is to generate a report based on the user's requirements. Do not use markdown format for your response."
 
     openai_response = openai.chat.completions.create(
@@ -29,6 +46,15 @@ def generate_content(doc, nl_instruction):
         ],
         temperature=0.5,
         stream=False,
+    """Generates a table in a Word document based on natural language instructions.
+    
+    Args:
+        doc (Document): A python-docx Document object to which the table will be added.
+        nl_instruction (str): Natural language instruction for generating table content.
+    
+    Returns:
+        Document: The modified Word document with the generated table inserted.
+    """
     )
     generated_text = openai_response.choices[0].message.content
     
@@ -92,6 +118,15 @@ def generate_table(doc, nl_instruction):
                     run.bold = True
 
             # Add rows to the table
+            """
+            Saves a docx document to a BytesIO buffer.
+            
+            Args:
+                doc (Document): The docx document object to be saved.
+            
+            Returns:
+                BytesIO: A buffer containing the saved document data.
+            """
             for item in descriptions:
                 row_cells = table.add_row().cells
                 row_cells[0].text = item['section']
@@ -107,6 +142,16 @@ def save_docx(doc):
 
 # Function to convert DOCX to HTML
 def docx_to_html(docx_path, html_path):
+    """
+    Convert a DOCX file to HTML format.
+    
+    Args:
+        docx_path (str): The file path of the input DOCX file.
+        html_path (str): The file path where the output HTML will be saved.
+    
+    Returns:
+        bool: True if the conversion was successful, False otherwise.
+    """
     try:
         with open(docx_path, "rb") as docx_file:
             result = mammoth.convert_to_html(docx_file)
@@ -120,7 +165,15 @@ def docx_to_html(docx_path, html_path):
         return False
 
 def main():
-    st.title('Agent Jude - Requirements Analyst')
+    """Main function for the Agent Jude - Requirements Analyst Streamlit application.
+    
+    Args:
+        None
+    
+    Returns:
+        None: This function doesn't return anything, it sets up and runs the Streamlit application.
+    
+    """    st.title('Agent Jude - Requirements Analyst')
 
     temp_dir = "./temp"
     os.makedirs(temp_dir, exist_ok=True)

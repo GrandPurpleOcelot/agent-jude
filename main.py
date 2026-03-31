@@ -16,10 +16,28 @@ openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 # Function to load a DOCX file
 def load_docx(document):
+    """
+    Loads a Microsoft Word document.
+    
+    Args:
+        document (str or Path): The path to the Word document file.
+    
+    Returns:
+        Document: A python-docx Document object representing the loaded Word document.
+    """
     doc = Document(document)
     return doc
 
 def copy_document(doc):
+    """
+    Creates a deep copy of a document.
+    
+    Args:
+        doc (Document): The original document to be copied.
+    
+    Returns:
+        Document: A new Document object containing a deep copy of the original document's body elements.
+    """
     new_doc = Document()
     for element in doc.element.body:
         new_doc.element.body.append(copy.deepcopy(element))
@@ -27,12 +45,29 @@ def copy_document(doc):
 
 # Function to generate content using OpenAI and replace targeted text
 def generate_content(doc, nl_instruction):
-    instruction_message = f"You are a professional business analyst. Your task is to generate a report based on the user's requirements. Do not use markdown format for your response."
+    """Generate content for a document based on natural language instructions.
+    
+    Args:
+        doc (Document): The original document to be modified.
+        nl_instruction (str): Natural language instruction for content generation.
+    
+    Returns:
+        Document: A modified copy of the original document with generated content.
+    """    instruction_message = f"You are a professional business analyst. Your task is to generate a report based on the user's requirements. Do not use markdown format for your response."
 
     openai_response = openai.chat.completions.create(
         model="gpt-4-turbo-preview",
         messages=[
             {"role": "system", "content": instruction_message},
+            """Generates a table in a Word document based on natural language instructions.
+            
+            Args:
+                doc (Document): The original Word document to modify.
+                nl_instruction (str): Natural language instruction for generating table content.
+            
+            Returns:
+                Document: A new Word document with the generated table inserted at the '[targeted_table]' placeholder.
+            """
             {"role": "user", "content": nl_instruction}
         ],
         temperature=0.5,
@@ -111,13 +146,41 @@ def generate_table(doc, nl_instruction):
                 row_cells[0].text = item['section']
                 row_cells[1].text = item['description']
         else:
-            # If the paragraph is not the placeholder, just copy it
+            """Main function for the Agent Jude - Requirements Analyst Streamlit application.
+            
+            This function sets up the user interface, handles file uploads, generates product documentation,
+            creates user story tables, and provides document previews and downloads.
+            
+            Args:
+                None
+            
+            Returns:
+                None: This function doesn't return anything, it updates the Streamlit UI.
+            """            # If the paragraph is not the placeholder, just copy it
             new_doc.add_paragraph(para.text)
 
     return new_doc
 
 # Function to save a DOCX file to a buffer
 def save_docx(doc):
+    """Save a docx document to a BytesIO buffer.
+    
+    Args:
+        doc (Document): The docx document object to be saved.
+    
+    Returns:
+        """
+        Converts a DOCX file to HTML format.
+        
+        Args:
+            docx_path (str): The file path of the input DOCX file.
+            html_path (str): The file path where the output HTML file will be saved.
+        
+        Returns:
+            bool: True if the conversion was successful, False otherwise.
+        """
+        BytesIO: A buffer containing the saved document data.
+    """
     buffer = BytesIO()
     doc.save(buffer)
     return buffer
